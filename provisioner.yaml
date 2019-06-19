@@ -2,6 +2,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: nfs-provisioner
+  namespace: slate-system
   labels:
     app: nfs-provisioner
 spec:
@@ -22,6 +23,7 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: nfs-provisioner
+  namespace: slate-system
 spec:
   replicas: 1
   selector:
@@ -36,6 +38,15 @@ spec:
     spec:
       nodeSelector:
         storage: "local"
+      tolerations:
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        # do not reschedule elsewhere if the chosen node is down
+      - key: "node-role.kubernetes.io/master"
+        operator: "Equal"
+        effect: "NoSchedule"
+        # allow running on the master node
       serviceAccount: nfs-provisioner
       containers:
         - name: nfs-provisioner
@@ -76,5 +87,5 @@ spec:
       volumes:
         - name: nfs-mount
           hostPath:
-            path: /tmp/nfs-storage
+            path: /home/nfs-storage
             type: DirectoryOrCreate
